@@ -76,9 +76,6 @@ export function PlayStoreSearch() {
     ? (reviewsError as Error).message
     : '';
 
-      // Get top 5 reviews by slicing the first 5
-  const top5Reviews = reviews.slice(0, 5);
-
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8">
@@ -115,7 +112,7 @@ export function PlayStoreSearch() {
      
                  {/* Sentiment Analysis Section */}
                  <div className="col-span-1">
-                   <SentimentAnalysis reviews={top5Reviews} />
+                   <SentimentAnalysis reviews={reviews} />
                  </div>
                </div>
              </>
