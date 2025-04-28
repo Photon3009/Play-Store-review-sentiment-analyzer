@@ -74,13 +74,13 @@ A full-stack web application that analyzes the sentiment of reviews of a Google 
  - Google Gemini Model
 
 
-# 📚 API Documentation
+## 📚 API Documentation
 
 This backend provides three main API endpoints:
 
 ---
 
-## Base URL
+### Base URL
 
 ```
 http://127.0.0.1:8000/v1
@@ -88,9 +88,9 @@ http://127.0.0.1:8000/v1
 
 ---
 
-## Endpoints
+### Endpoints
 
-### 1. 🔍 Search Apps
+1. 🔍 Search Apps
 
 **GET** `/search-apps`
 
@@ -121,7 +121,7 @@ GET /v1/search-apps?query=spotify
 
 ---
 
-### 2. 📝 Fetch Reviews
+2. 📝 Fetch Reviews
 
 **GET** `/fetch-reviews`
 
@@ -150,7 +150,7 @@ GET /v1/fetch-reviews?app_id=com.spotify.music
 
 ---
 
-### 3. 📊 Analyze Sentiment
+3. 📊 Analyze Sentiment
 
 **POST** `/analyze-sentiment`
 
