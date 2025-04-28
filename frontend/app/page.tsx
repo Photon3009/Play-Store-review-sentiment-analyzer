@@ -1,103 +1,125 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useRef } from 'react';
+import { debounce } from 'lodash';
+import { useQuery } from '@tanstack/react-query';
+import PlayStoreService, { App } from '@/lib/services/playStoreService';
+import SearchInput from '@/components/play_store/SearchInput';
+import SearchResultsDropdown from '@/components/play_store/SearchResultsDropdown';
+import SelectedAppCard from '@/components/play_store/SelectedAppCard';
+import ReviewsSection from '@/components/play_store/ReviewSection';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import ErrorMessage from '@/components/ErrorMessage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import SentimentAnalysis from '@/components/sentiment_analysis/SentimentAnalysis';
+
+const queryClient = new QueryClient();
+
+export default function PlayStoreSearchWrapper() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <QueryClientProvider client={queryClient}>
+      <PlayStoreSearch />
+    </QueryClientProvider>
+  );
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+export function PlayStoreSearch() {
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedApp, setSelectedApp] = useState<App | null>(null);
+
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  const debouncedSetQuery = useRef(
+    debounce((value: string) => {
+      setDebouncedQuery(value);
+    }, 300)
+  ).current;
+
+  const { data: apps = [], isLoading: isSearchLoading, error: searchError } = useQuery({
+    queryKey: ['searchApps', debouncedQuery],
+    queryFn: () => PlayStoreService.searchApps(debouncedQuery),
+    enabled: debouncedQuery.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: reviews = [], isLoading: isReviewsLoading, error: reviewsError } = useQuery({
+    queryKey: ['appReviews', selectedApp?.appId],
+    queryFn: () => PlayStoreService.fetchReviews(selectedApp?.appId || ''),
+    enabled: !!selectedApp?.appId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    debouncedSetQuery(value);
+  };
+
+  const handleSelectApp = (app: App) => {
+    setSelectedApp(app);
+    setQuery('');
+    setDebouncedQuery('');
+    searchInputRef.current?.focus();
+  };
+
+  const handleClearSelection = () => {
+    setSelectedApp(null);
+    setQuery('');
+    setDebouncedQuery('');
+    searchInputRef.current?.focus();
+  };
+
+  const errorMessage = searchError
+    ? (searchError as Error).message
+    : reviewsError
+    ? (reviewsError as Error).message
+    : '';
+
+      // Get top 5 reviews by slicing the first 5
+  const top5Reviews = reviews.slice(0, 5);
+
+  return (
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Google Play Store Search</h1>
+        <p className="text-shadow-white">Search for apps and read their reviews</p>
+      </div>
+
+      <SearchInput
+        query={query}
+        onChange={handleInputChange}
+        onClear={() => {
+          setQuery('');
+          setDebouncedQuery('');
+        }}
+        inputRef={searchInputRef}
+      />
+
+      {debouncedQuery && apps.length > 0 && !selectedApp && (
+        <SearchResultsDropdown apps={apps} onSelect={handleSelectApp} inputRef={searchInputRef} />
+      )}
+
+      {isSearchLoading && <LoadingSpinner />}
+
+      {errorMessage && <ErrorMessage message={errorMessage} />}
+
+      {selectedApp && (
+               <>
+               <SelectedAppCard app={selectedApp} onClear={handleClearSelection} />
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                 {/* Review Section */}
+                 <div className="col-span-1">
+                   <ReviewsSection reviews={reviews} isLoading={isReviewsLoading} />
+                 </div>
+     
+                 {/* Sentiment Analysis Section */}
+                 <div className="col-span-1">
+                   <SentimentAnalysis reviews={top5Reviews} />
+                 </div>
+               </div>
+             </>
+      )}
     </div>
   );
 }
