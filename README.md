@@ -75,7 +75,7 @@ A full-stack web application that analyzes the sentiment of reviews of a Google 
 
 ## Demo
 
-[Watch the video demo here](https://drive.google.com/file/d/1yvo1yd3KE0ZKvHvdjM18eLw02I1armJ-/view?usp=sharing)
+[Watch the video demo here](https://drive.google.com/file/d/14sPFP9Fyuj2ZZ263j2rI3kbBnkT2xeTH/view?usp=sharing)
 
 
 ## 📚 API Documentation
